@@ -17,6 +17,8 @@ A production-style, end-to-end **Medallion Architecture** data pipeline built us
 - [Tech Stack](#tech-stack)
 - [Key Concepts Used](#key-concepts-used)
 - [How to Run](#how-to-run)
+- [Future Enhancements](#future-enhancements)
+- [Created By](#created-by)
 
 ---
 
@@ -85,10 +87,11 @@ Project_SDP/
 
 **Purpose:** Raw ingestion of streaming CSV data from Amazon S3.
 
-- Reads data incrementally using `spark.readStream`
-- Two separate sources merged into a single streaming table using `append_flow`
-- Schema enforced at ingestion time
-- No transformations — raw data preserved as-is
+The Bronze layer serves as the **raw landing zone** for all incoming data.
+
+- Ingests streaming CSV data incrementally from Amazon S3
+- Multi-source ingestion merged into a single unified streaming table
+- Raw data preserved as-is with no transformations applied
 
 ---
 
@@ -96,10 +99,11 @@ Project_SDP/
 
 **Purpose:** Cleaned, validated, and enriched data ready for dimensional modelling.
 
-- Built as **Materialized Views** on top of Bronze tables
-- Business transformations applied (e.g. `is_carryable` column derived from `device_type`)
-- Columns selected and reordered for downstream consumption
-- Auto-refreshes incrementally when Bronze data changes
+The Silver layer applies **business-level transformations** on top of Bronze data.
+
+- Cleans, validates and enriches raw data for downstream consumption
+- Business logic and derived columns applied to standardise the dataset
+- Built as Materialized Views that auto-refresh incrementally when Bronze updates
 
 
 
@@ -108,6 +112,8 @@ Project_SDP/
 ### 🥇 Gold Layer
 
 **Purpose:** Fully modelled dimensional data ready for BI, dashboards, and analytics.
+
+The Gold layer implements a **Star Schema** dimensional model on top of the cleansed Silver data. All dimension tables are managed with **SCD Type 2** using `create_auto_cdc_flow`, ensuring complete historical tracking of any changes to artist, track, user, or date records. The Fact table captures every streaming event with full historical context. A denormalised **One Big Table (OBT)** is provided as a Materialized View, joining all dimensions to the fact table for simplified analytics consumption without requiring complex joins.
 
 #### Dimension Tables (SCD Type 2)
 All dimensions are managed using `create_auto_cdc_flow` with `stored_as_scd_type=2`, preserving full historical changes:
@@ -171,4 +177,23 @@ All dimensions are managed using `create_auto_cdc_flow` with `stored_as_scd_type
 
 ---
 
-> Built with ❤️ using Databricks Spark Declarative Pipelines
+## 🔮 Future Enhancements
+
+- Add **data quality expectations** using `@dp.expect` and `@dp.expect_or_drop` across all layers for automated data quality monitoring
+- Integrate **real-time event streaming** via Apache Kafka as an additional source alongside S3
+- Build **BI dashboards** on top of the Gold OBT using Databricks SQL or Power BI
+- Add **alerting and monitoring** for pipeline failures and data quality breaches
+- Introduce **data masking and PII handling** for user-sensitive fields in compliance with GDPR
+- Automate pipeline scheduling using **Databricks Workflows** for production-grade orchestration
+
+---
+
+## 👨‍💻 Created By
+
+| | |
+|---|---|
+| **Name** | Utsav Kanani |
+
+
+---
+
